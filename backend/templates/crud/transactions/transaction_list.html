@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Transactions{% endblock %}
+
+{% block content %}
+<div class="actions">
+  <a href="{% url 'transaction-add' %}" class="btn btn-add">➕ Add Transaction</a>
+</div>
+
+<ul class="transactions-list">
+  {% for txn in transactions %}
+    <li class="transaction-item">
+      <span class="txn-date">{{ txn.date|date:"Y-m-d" }}</span>
+      <span class="category-color" style="background-color: {{ txn.category.color_hex }}"></span>
+      <span class="category-name">{{ txn.category.name }}</span>
+      <span class="txn-description">{{ txn.description }}</span>
+      <span class="txn-amount {% if txn.type == 'EXPENSE' %}expense{% else %}income{% endif %}">
+        {{ txn.amount }}
+      </span>
+      <!-- CRUD buttons -->
+      <a href="{% url 'transaction-edit' txn.pk %}" class="btn-edit">✏️</a>
+      <a href="{% url 'transaction-delete' txn.pk %}" class="btn-delete">🗑️</a>
+    </li>
+  {% empty %}
+    <p>No transactions yet.</p>
+  {% endfor %}
+</ul>
+{% endblock %}
+

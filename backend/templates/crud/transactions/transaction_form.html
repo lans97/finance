@@ -1,0 +1,7 @@
+<h2>{% if object %}Edit{% else %}Add{% endif %} Transaction</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">💾 Save</button>
+    <button type="button" onclick="document.getElementById('modal-overlay').classList.add('hidden')">Cancel</button>
+</form>

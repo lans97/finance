@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h2>📈 Dashboard</h1>
+    <div class="dashboard">
+  <div class="chart-card">
+    <h3>Ganancias vs Gastos</h3>
+    <canvas id="incomeExpenseChart"></canvas>
+  </div>
+
+  <div class="chart-card">
+    <h3>Balance Mensual ({{ now.year }})</h3>
+    <canvas id="monthlyChart"></canvas>
+  </div>
+
+  <div class="chart-card">
+    <h3>Gastos por Categoría</h3>
+    <canvas id="categoryChart"></canvas>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+{{ income_total|json_script:"income-data" }}
+{{ expense_total|json_script:"expense-data" }}
+{{ category_data|json_script:"category-data" }}
+{{ monthly_data|json_script:"monthly-data" }}
+{{ balance_data|json_script:"balance-data" }}
+<script>
+  // parse the JSON inserted into the DOM by json_script
+  const income = JSON.parse(document.getElementById('income-data').textContent) || 0;
+  const expense = JSON.parse(document.getElementById('expense-data').textContent) || 0;
+  const categories = JSON.parse(document.getElementById('category-data').textContent) || [];
+  const monthly = JSON.parse(document.getElementById('monthly-data').textContent) || [];
+  const balance = JSON.parse(document.getElementById('balance-data').textContent) || [];
+
+  const categoryLabelsArr = categories.map(c => c.category__name);
+  const categoryTotals = categories.map(c => parseFloat(c.total));
+  const categoryColors = categories.map(c => c.category__color_hex || '#cccccc');
+
+  const moneyFmt = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2
+  });
+
+  // Example: Income vs Expense doughnut
+  new Chart(document.getElementById('incomeExpenseChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Ganancia', 'Gasto'],
+      datasets: [{ data: [income, expense] }]
+    },
+    options: {
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              const label = ctx.dataset.label ? ctx.dataset.label + ': ' : '';
+              return label + moneyFmt.format(ctx.parsed);
+            }
+          }
+        },
+        legend: {
+          position: 'bottom',
+          labels: { boxWidth: 20 }
+        }
+      },
+    }
+  });
+
+  // Example: Monthly totals (build separate arrays for income & expense)
+  const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const monthlyIncome = Array(12).fill(0);
+  const monthlyExpense = Array(12).fill(0);
+
+  monthly.forEach(item => {
+    const idx = (item.date__month || item.date_month) - 1; // guard different key names
+    const total = parseFloat(item.total) || 0; // ensure number
+    if (item.type === 'INCOME') monthlyIncome[idx] = total;
+    else monthlyExpense[idx] = total;
+  });
+
+  const balances = JSON.parse(document.getElementById('balance-data').textContent);
+  const balanceValues = balances.map(b => parseFloat(b.balance) || 0);
+
+  new Chart(document.getElementById('monthlyChart'), {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [{
+        label: 'Net Balance',
+        data: balanceValues,
+        backgroundColor: balanceValues.map(v => v >= 0 ? 'rgba(75,192,192,0.6)' : 'rgba(255,99,132,0.6)')
+      }]
+    },
+    options: {
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.label}: ${moneyFmt.format(ctx.parsed.y)}`
+          }
+        },
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { callback: v => moneyFmt.format(v) }
+        }
+      }
+    }
+  });
+
+  new Chart(document.getElementById('categoryChart'), {
+    type: 'pie',
+    data: {
+      labels: categoryLabelsArr,
+      datasets: [{
+        data: categoryTotals,
+        backgroundColor: categoryColors, // ✅ colors from DB
+        borderColor: '#fff',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              const label = ctx.dataset.label ? ctx.dataset.label + ': ' : '';
+              return label + moneyFmt.format(ctx.parsed);
+            }
+          }
+        },
+        legend: {
+          position: 'right',
+          labels: {
+            usePointStyle: true,
+            pointStyle: 'circle',
+            font: { size: 14 }
+          }
+        },
+      },
+    }
+  });
+</script>
+{% endblock %}

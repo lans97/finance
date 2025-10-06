@@ -1,0 +1,8 @@
+  <h2>Delete Category</h2>
+  <p>Are you sure you want to delete <strong>{{ object.name }}</strong>?</p>
+
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit">🗑️ Confirm Delete</button>
+    <button type="button" onclick="document.getElementById('modal-overlay').classList.add('hidden')">Cancel</button>
+  </form>

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Categories{% endblock %}
+
+{% block content %}
+<h2>Categories</h2>
+
+<div class="actions">
+  <a href="{% url 'category-add' %}" class="btn btn-add">➕ Add Category</a>
+</div>
+
+<ul>
+  {% for cat in categories %}
+    <li>
+      <span class="category-color" style="background-color: {{ cat.color_hex }};"></span>
+      {{ cat.name }}
+      <a href="{% url 'category-edit' cat.pk %}" class="btn-edit">✏️</a>
+      <a href="{% url 'category-delete' cat.pk %}" class="btn-delete">🗑️</a>
+    </li>
+  {% empty %}
+    <p>No categories yet.</p>
+  {% endfor %}
+</ul>
+{% endblock %}
+
